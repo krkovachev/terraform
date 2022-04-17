@@ -2,3 +2,5 @@ terraform.tfstate
 terraform.tfstate.backup
 .terraform/
 .terraform.lock.hcl
+aws_access_key.tf
+terraform-key.pem
