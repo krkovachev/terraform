@@ -89,6 +89,28 @@ resource "aws_instance" "dof-server" {
     tags = {
       "Name" = "dof-server-${count.index + 1}"
     }
+    provisioner "file" {
+      source = "./provision.sh"
+      destination = "/tmp/provision.sh"
+      connection {
+        type = "ssh"
+        user = "ec2-user"
+        private_key = file("../terraform-key.pem")
+        host = self.public_ip
+      }
+    }
+    provisioner "remote-exec" {
+      inline = [
+        "chmod +x /tmp/provision.sh",
+        "/tmp/provision.sh"
+      ]
+      connection {
+        type = "ssh"
+        user = "ec2-user"
+        private_key = file("../terraform-key.pem")
+        host = self.public_ip
+      }
+    }
 }
 
 output "public_ip" {
