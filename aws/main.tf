@@ -70,13 +70,17 @@ resource "aws_security_group" "dof-pub-sg" {
 }
 
 resource "aws_instance" "dof-server" {
+    count = 2
     ami = "ami-06ec8443c2a35b0ba"
     instance_type= "t2.micro"
     key_name = "terraform-key"
     vpc_security_group_ids = [aws_security_group.dof-pub-sg.id]
     subnet_id = aws_subnet.dof-snet.id
+    tags = {
+      "Name" = "dof-server-${count.index + 1}"
+    }
 }
 
 output "public_ip" {
-    value = aws_instance.dof-server.public_ip
+    value = aws_instance.dof-server.*.public_ip
 }
