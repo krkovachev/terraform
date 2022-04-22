@@ -4,6 +4,13 @@ provider "aws" {
     region = "eu-central-1"
 }
 
+data "aws_availability_zones" "dof-avz" {}
+
+variable "dof-cidr" {
+  type = list
+  default = ["10.10.10.0/24", "10.10.11.0/24"]
+}
+
 resource "aws_vpc" "dof-vpc" {
     cidr_block = "10.10.0.0/16"
     enable_dns_hostnames = true
@@ -32,16 +39,19 @@ resource "aws_route_table" "dof-prt" {
 }
 
 resource "aws_subnet" "dof-snet" {
+  count = 2
   vpc_id = aws_vpc.dof-vpc.id
-  cidr_block = "10.10.10.0/24"
+  cidr_block = var.dof-cidr[count.index]
   map_public_ip_on_launch = true
+  availability_zone = data.aws_availability_zones.dof-avz.names[count.index]
   tags = {
-      Name = "DOF-SUB-NET"
+      Name = "DOF-SUB-NET${count.index + 1}"
   }
 }
 
 resource "aws_route_table_association" "dof-prt-assoc" {
-    subnet_id = aws_subnet.dof-snet.id
+    count = 2
+    subnet_id = aws_subnet.dof-snet.*.id[count.index]
     route_table_id = aws_route_table.dof-prt.id
 }
 
@@ -75,7 +85,7 @@ resource "aws_instance" "dof-server" {
     instance_type= "t2.micro"
     key_name = "terraform-key"
     vpc_security_group_ids = [aws_security_group.dof-pub-sg.id]
-    subnet_id = aws_subnet.dof-snet.id
+    subnet_id = element(aws_subnet.dof-snet.*.id, count.index)
     tags = {
       "Name" = "dof-server-${count.index + 1}"
     }
